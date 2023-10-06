@@ -47,12 +47,18 @@ model_resnet = models.Sequential(
     [
         base_model_resnet,
         layers.Flatten(),
-        layers.Dense(1024, activation="relu", kernel_regularizer=regularizers.l2(0.01)),
-        layers.Dropout(0.5),
-        layers.Dense(512, activation="relu", kernel_regularizer=regularizers.l2(0.01)),
-        layers.Dropout(0.4),
-        layers.Dense(256, activation="relu", kernel_regularizer=regularizers.l2(0.01)),
+        layers.Dense(
+            1024, activation="relu", kernel_regularizer=regularizers.l2(0.0001)
+        ),
         layers.Dropout(0.3),
+        layers.Dense(
+            512, activation="relu", kernel_regularizer=regularizers.l2(0.0001)
+        ),
+        layers.Dropout(0.1),
+        layers.Dense(
+            256, activation="relu", kernel_regularizer=regularizers.l2(0.0001)
+        ),
+        layers.Dropout(0.1),
         layers.Dense(5, activation="softmax"),
     ]
 )
@@ -95,7 +101,8 @@ checkpoint = ModelCheckpoint(
 )
 
 history = model_resnet.fit(
-    datagen.flow(x_train, y_train, batch_size=32),
+    # datagen.flow(x_train, y_train, batch_size=32),
+    x_train,y_train
     epochs=60,
     validation_data=(x_test, y_test),
     callbacks=[early_stop, checkpoint],
