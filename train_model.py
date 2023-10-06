@@ -97,7 +97,6 @@ history = model_resnet.fit(
     x_train,
     y_train,
     epochs=100,
-    steps_per_epoch=500,
     validation_data=(x_test, y_test),
     callbacks=[early_stop, checkpoint],
 )
