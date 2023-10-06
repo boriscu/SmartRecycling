@@ -23,6 +23,7 @@ y_test = np.where(y_test == 3, 2, y_test)
 # Label names
 label_names = ["Cardboard", "Glass bottle", "Can", "Plastic bottle"]
 
+# Build the model
 base_model_resnet = tf.keras.applications.ResNet50(
     weights="imagenet", include_top=False, input_shape=(128, 128, 3)
 )
@@ -54,6 +55,8 @@ history = model_resnet.fit(
 loss_resnet, accuracy_resnet = model_resnet.evaluate(x_test, y_test)
 print(f"Test Loss: {loss_resnet:.4f}")
 print(f"Test Accuracy: {accuracy_resnet:.4f}")
+
+model_resnet.save("recycle_model.h5")
 
 # Plot training & validation accuracy values
 plt.figure(figsize=(12, 5))
