@@ -23,12 +23,7 @@ y_train = y_train.flatten()
 y_test = y_test.flatten()
 
 # Label names
-label_names = ["Cardboard", "Glass bottle", "Can", "Plastic bottle"]
-
-y_train[y_train == 3] = 2
-y_test[y_test == 3] = 2
-y_train[y_train == 4] = 3
-y_test[y_test == 4] = 3
+label_names = ["Cardboard", "Glass bottle", "Can", "Crushed can", "Plastic bottle"]
 
 random_idx = np.random.randint(0, len(x_train))
 plt.imshow(x_train[random_idx])
@@ -50,7 +45,7 @@ model_resnet = models.Sequential(
         layers.Flatten(),
         layers.Dense(512, activation="relu"),
         layers.Dropout(0.5),
-        layers.Dense(4, activation="softmax"),
+        layers.Dense(5, activation="softmax"),
     ]
 )
 
@@ -71,8 +66,8 @@ history = model_resnet.fit(
 )
 
 loss_resnet, accuracy_resnet = model_resnet.evaluate(x_test, y_test)
-print(f"ResNet50 - Test Loss: {loss_resnet:.4f}")
-print(f"ResNet50 - Test Accuracy: {accuracy_resnet:.4f}")
+print(f"Test Loss: {loss_resnet:.4f}")
+print(f"Test Accuracy: {accuracy_resnet:.4f}")
 
 model_resnet.save("recycle_model.h5")
 
