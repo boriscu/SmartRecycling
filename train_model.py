@@ -47,18 +47,18 @@ model_resnet = models.Sequential(
     [
         base_model_resnet,
         layers.Flatten(),
-        layers.Dense(1024, activation="relu"),
-        layers.Dense(512, activation="relu"),
+        layers.Dense(1024, activation="relu", kernel_initializer="he_normal"),
+        layers.Dense(512, activation="relu", kernel_initializer="he_normal"),
         layers.Dropout(0.3),
-        layers.Dense(256, activation="relu"),
-        layers.Dense(5, activation="softmax"),
+        layers.Dense(256, activation="relu", kernel_initializer="he_normal"),
+        layers.Dense(5, activation="softmax", kernel_initializer="he_normal"),
     ]
 )
 
 lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
-    initial_learning_rate=0.009,  # Starting learning rate
+    initial_learning_rate=0.001,  # Starting learning rate
     decay_steps=1000,  # Decay the learning rate after every 1000 steps
-    decay_rate=0.9,  # Decay rate
+    decay_rate=0.9,  # Decay rate (lr=initial*decay every 1000 steps)
 )
 
 optimizer = tf.keras.optimizers.Adam(learning_rate=lr_schedule)
@@ -166,3 +166,9 @@ sns.heatmap(
 plt.xlabel("Predicted Label")
 plt.ylabel("True Label")
 plt.show()
+
+# Saving the model to google drive
+# from google.colab import drive
+# drive.mount('/content/drive')
+# model_save_path = "/content/drive/MyDrive/Modeli/recycle_model.h5"
+# model_resnet.save(model_save_path)
