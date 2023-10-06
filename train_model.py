@@ -1,9 +1,13 @@
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras import layers, models
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import confusion_matrix
+from tensorflow.keras import layers, models
+from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.callbacks import ModelCheckpoint
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras import regularizers
 
 # Get the data
 # !wget -nc http://web.cecs.pdx.edu/~singh/rcyc-web/recycle_data_shuffled.tar.gz
@@ -43,8 +47,12 @@ model_resnet = models.Sequential(
     [
         base_model_resnet,
         layers.Flatten(),
-        layers.Dense(512, activation="relu"),
+        layers.Dense(1024, activation="relu", kernel_regularizer=regularizers.l2(0.01)),
         layers.Dropout(0.5),
+        layers.Dense(512, activation="relu", kernel_regularizer=regularizers.l2(0.01)),
+        layers.Dropout(0.4),
+        layers.Dense(256, activation="relu", kernel_regularizer=regularizers.l2(0.01)),
+        layers.Dropout(0.3),
         layers.Dense(5, activation="softmax"),
     ]
 )
@@ -61,8 +69,36 @@ model_resnet.compile(
     optimizer=optimizer, loss="sparse_categorical_crossentropy", metrics=["accuracy"]
 )
 
+# Data augmentation
+datagen = ImageDataGenerator(
+    rotation_range=20,
+    width_shift_range=0.2,
+    height_shift_range=0.2,
+    shear_range=0.2,
+    zoom_range=0.2,
+    horizontal_flip=True,
+    fill_mode="nearest",
+)
+datagen.fit(x_train)
+
+# Show agumented images
+augmented_images, augmented_labels = next(datagen.flow(x_train, y_train, batch_size=5))
+for img, label in zip(augmented_images, augmented_labels):
+    plt.imshow(img)
+    plt.title(label_names[label])
+    plt.show()
+
+# Callbacks
+early_stop = EarlyStopping(monitor="val_loss", patience=10, restore_best_weights=True)
+checkpoint = ModelCheckpoint(
+    "best_weights.h5", save_best_only=True, monitor="val_accuracy", mode="max"
+)
+
 history = model_resnet.fit(
-    x_train, y_train, epochs=60, validation_data=(x_test, y_test)
+    datagen.flow(x_train, y_train, batch_size=32),
+    epochs=60,
+    validation_data=(x_test, y_test),
+    callbacks=[early_stop, checkpoint],
 )
 
 loss_resnet, accuracy_resnet = model_resnet.evaluate(x_test, y_test)
