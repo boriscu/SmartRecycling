@@ -47,18 +47,10 @@ model_resnet = models.Sequential(
     [
         base_model_resnet,
         layers.Flatten(),
-        layers.Dense(
-            1024, activation="relu", kernel_regularizer=regularizers.l2(0.0001)
-        ),
+        layers.Dense(1024, activation="relu"),
+        layers.Dense(512, activation="relu"),
         layers.Dropout(0.3),
-        layers.Dense(
-            512, activation="relu", kernel_regularizer=regularizers.l2(0.0001)
-        ),
-        layers.Dropout(0.1),
-        layers.Dense(
-            256, activation="relu", kernel_regularizer=regularizers.l2(0.0001)
-        ),
-        layers.Dropout(0.1),
+        layers.Dense(256, activation="relu"),
         layers.Dense(5, activation="softmax"),
     ]
 )
