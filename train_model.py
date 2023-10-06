@@ -5,6 +5,10 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import confusion_matrix
 
+# Get the data
+# !wget -nc http://web.cecs.pdx.edu/~singh/rcyc-web/recycle_data_shuffled.tar.gz
+# !tar -xvzf recycle_data_shuffled.tar.gz
+
 # Load the data
 data = np.load("recycle_data_shuffled.npz")
 x_train, y_train = data["x_train"], data["y_train"]
