@@ -7,7 +7,6 @@ from tensorflow.keras import layers, models
 from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
-from tensorflow.keras import regularizers
 
 # Get the data
 # !wget -nc http://web.cecs.pdx.edu/~singh/rcyc-web/recycle_data_shuffled.tar.gz
@@ -29,6 +28,7 @@ y_test = y_test.flatten()
 # Label names
 label_names = ["Cardboard", "Glass bottle", "Can", "Crushed can", "Plastic bottle"]
 
+# Show a random image
 random_idx = np.random.randint(0, len(x_train))
 plt.imshow(x_train[random_idx])
 plt.title(f"Label: {label_names[y_train[random_idx]]}")
@@ -56,7 +56,7 @@ model_resnet = models.Sequential(
 )
 
 lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
-    initial_learning_rate=0.001,  # Starting learning rate
+    initial_learning_rate=0.009,  # Starting learning rate
     decay_steps=1000,  # Decay the learning rate after every 1000 steps
     decay_rate=0.9,  # Decay rate
 )
@@ -92,24 +92,25 @@ checkpoint = ModelCheckpoint(
     "best_weights.h5", save_best_only=True, monitor="val_accuracy", mode="max"
 )
 
+# Fit the model
+batch_size = 32
 history = model_resnet.fit(
-    # datagen.flow(x_train, y_train, batch_size=32),
-    x_train,
-    y_train,
+    datagen.flow(x_train, y_train, batch_size=batch_size),
+    steps_per_epoch=len(x_train) / batch_size,
     epochs=100,
     validation_data=(x_test, y_test),
     callbacks=[early_stop, checkpoint],
 )
+model_resnet.save("recycle_model.h5")
 
+# Evaluate the model
 loss_resnet, accuracy_resnet = model_resnet.evaluate(x_test, y_test)
 print(f"Test Loss: {loss_resnet:.4f}")
 print(f"Test Accuracy: {accuracy_resnet:.4f}")
 
-model_resnet.save("recycle_model.h5")
 
 # Plot training & validation accuracy values
 plt.figure(figsize=(12, 5))
-
 plt.subplot(1, 2, 1)
 plt.plot(history.history["accuracy"])
 plt.plot(history.history["val_accuracy"])
