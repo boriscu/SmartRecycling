@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-from tensorflow.python.keras import layers, models
+from tensorflow.keras import layers, models
 import matplotlib.pyplot as plt
 
 # Load the data
@@ -40,14 +40,35 @@ model_resnet.compile(
     optimizer="adam", loss="sparse_categorical_crossentropy", metrics=["accuracy"]
 )
 
-model_resnet.fit(x_train, y_train, epochs=10, validation_data=(x_test, y_test))
-
+history = model_resnet.fit(
+    x_train, y_train, epochs=60, validation_data=(x_test, y_test)
+)
 
 loss_resnet, accuracy_resnet = model_resnet.evaluate(x_test, y_test)
-print(f"ResNet50 - Test Loss: {loss_resnet:.4f}")
-print(f"ResNet50 - Test Accuracy: {accuracy_resnet:.4f}")
+print(f"Test Loss: {loss_resnet:.4f}")
+print(f"Test Accuracy: {accuracy_resnet:.4f}")
 
-model_resnet.save("resnet50_model.h5")
+# Plot training & validation accuracy values
+plt.figure(figsize=(12, 5))
+plt.subplot(1, 2, 1)
+plt.plot(history.history["accuracy"])
+plt.plot(history.history["val_accuracy"])
+plt.title("Model Accuracy")
+plt.ylabel("Accuracy")
+plt.xlabel("Epoch")
+plt.legend(["Train", "Test"], loc="upper left")
+
+# Plot training & validation loss values
+plt.subplot(1, 2, 2)
+plt.plot(history.history["loss"])
+plt.plot(history.history["val_loss"])
+plt.title("Model Loss")
+plt.ylabel("Loss")
+plt.xlabel("Epoch")
+plt.legend(["Train", "Test"], loc="upper left")
+
+plt.tight_layout()
+plt.show()
 
 # Randomly select an image from the test set
 random_idx = np.random.randint(0, len(x_test))
