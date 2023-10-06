@@ -102,8 +102,10 @@ checkpoint = ModelCheckpoint(
 
 history = model_resnet.fit(
     # datagen.flow(x_train, y_train, batch_size=32),
-    x_train,y_train
-    epochs=60,
+    x_train,
+    y_train,
+    epochs=100,
+    steps_per_epoch=500,
     validation_data=(x_test, y_test),
     callbacks=[early_stop, checkpoint],
 )
