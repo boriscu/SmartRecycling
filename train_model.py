@@ -16,6 +16,13 @@ x_test = x_test.astype("float32") / 255.0
 y_train = y_train.flatten()
 y_test = y_test.flatten()
 
+# Combine cans with crushed cans
+y_train = np.where(y_train == 3, 2, y_train)
+y_test = np.where(y_test == 3, 2, y_test)
+
+# Label names
+label_names = ["Cardboard", "Glass bottle", "Can", "Plastic bottle"]
+
 base_model_resnet = tf.keras.applications.ResNet50(
     weights="imagenet", include_top=False, input_shape=(128, 128, 3)
 )
@@ -31,7 +38,7 @@ model_resnet = models.Sequential(
         layers.Dense(512, activation="relu"),
         layers.Dropout(0.5),
         layers.Dense(
-            5, activation="softmax"
+            4, activation="softmax"
         ),  # There are 5 unique labels in the dataset
     ]
 )
@@ -83,6 +90,8 @@ predicted_label = np.argmax(predicted_scores)
 
 # Plot the image with true and predicted labels
 plt.imshow(image)
-plt.title(f"True Label: {true_label}\nPredicted Label: {predicted_label}")
+plt.title(
+    f"True Label: {label_names[true_label]}\nPredicted Label: {label_names[predicted_label]}"
+)
 plt.axis("off")
 plt.show()
