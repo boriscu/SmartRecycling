@@ -7,7 +7,6 @@ from tensorflow.keras import layers, models
 from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
-from tensorflow.keras import regularizers
 from tensorflow.keras.applications.resnet50 import preprocess_input
 
 # Get the data
@@ -93,10 +92,10 @@ early_stop = EarlyStopping(monitor="val_loss", patience=10, restore_best_weights
 checkpoint = ModelCheckpoint(
     "best_weights.h5", save_best_only=True, monitor="val_accuracy", mode="max"
 )
-
-# Fit the model
-batch_size = 128
+# Train the model
 initial_epochs = 30
+batch_size = 128
+
 history = model_resnet.fit_generator(
     datagen.flow(x_train, y_train, batch_size=batch_size),
     epochs=initial_epochs,
@@ -104,17 +103,15 @@ history = model_resnet.fit_generator(
     callbacks=[early_stop, checkpoint],
 )
 
-# Unfreeze the top 10 layers of the base model
+# Continue training (fine-tuning)
 for layer in base_model_resnet.layers[-10:]:
     layer.trainable = True
 
-# Recompile the model after unfreezing
 model_resnet.compile(
     optimizer=optimizer, loss="sparse_categorical_crossentropy", metrics=["accuracy"]
 )
 
-# Continue training (fine-tuning)
-fine_tune_epochs = 10
+fine_tune_epochs = 5
 total_epochs = initial_epochs + fine_tune_epochs
 
 history_fine = model_resnet.fit(
@@ -126,13 +123,12 @@ history_fine = model_resnet.fit(
     callbacks=[early_stop, checkpoint],
 )
 
-model_resnet.save("recycle_model_fine_tuned.h5")
+model_resnet.save("recycle_model.h5")
 
 # Evaluate the model
 loss_resnet, accuracy_resnet = model_resnet.evaluate(x_test, y_test)
 print(f"Test Loss: {loss_resnet:.4f}")
 print(f"Test Accuracy: {accuracy_resnet:.4f}")
-
 
 # Plot training & validation accuracy values
 plt.figure(figsize=(12, 5))
@@ -156,25 +152,24 @@ plt.legend(["Train", "Test"], loc="upper left")
 plt.tight_layout()
 plt.show()
 
-# Plot training & validation accuracy values for fine training
+# Plot training & validation fine accuracy values
 plt.figure(figsize=(12, 5))
-
 plt.subplot(1, 2, 1)
-plt.plot(history.history_fine["accuracy"])
-plt.plot(history.history_fine["val_accuracy"])
+plt.plot(history_fine.history["accuracy"])
+plt.plot(history_fine.history["val_accuracy"])
 plt.title("Model Fine Accuracy")
 plt.ylabel("Fine Accuracy")
-plt.xlabel("Fine Epoch")
-plt.legend(["Fine Train", "Fine Test"], loc="upper left")
+plt.xlabel("Epoch")
+plt.legend(["Train", "Test"], loc="upper left")
 
-# Plot training & validation loss values for fine training
+# Plot training & validation fine loss values
 plt.subplot(1, 2, 2)
-plt.plot(history.history_fine["loss"])
-plt.plot(history.history_fine["val_loss"])
+plt.plot(history_fine.history["loss"])
+plt.plot(history_fine.history["val_loss"])
 plt.title("Model Fine Loss")
 plt.ylabel("Fine Loss")
-plt.xlabel("Fine Epoch")
-plt.legend(["Fine Train", "Fine Test"], loc="upper left")
+plt.xlabel("Epoch")
+plt.legend(["Train", "Test"], loc="upper left")
 
 plt.tight_layout()
 plt.show()
@@ -194,7 +189,6 @@ plt.title(
 )
 plt.axis("off")
 plt.show()
-
 
 # Plot confusion matrix
 y_pred = model_resnet.predict(x_test)
