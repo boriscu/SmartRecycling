@@ -1,12 +1,13 @@
-from tensorflow.keras import layers, models
-from tensorflow.keras.callbacks import EarlyStopping
-from tensorflow.keras.callbacks import ModelCheckpoint
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
 import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import confusion_matrix
+from tensorflow.keras import layers, models
+from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.callbacks import ModelCheckpoint
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras import regularizers
 from tensorflow.keras.applications.resnet50 import preprocess_input
 
 # Get the data
@@ -17,10 +18,6 @@ from tensorflow.keras.applications.resnet50 import preprocess_input
 data = np.load("recycle_data_shuffled.npz")
 x_train, y_train = data["x_train"], data["y_train"]
 x_test, y_test = data["x_test"], data["y_test"]
-
-#  Preprocess the Images:
-x_train = preprocess_input(x_train)
-x_test = preprocess_input(x_test)
 
 # Flatten the Labels
 y_train = y_train.flatten()
@@ -48,12 +45,8 @@ model_resnet = models.Sequential(
     [
         base_model_resnet,
         layers.Flatten(),
-        layers.Dense(
-            1024,
-            activation="relu",
-            kernel_initializer="he_normal",
-            kernel_regularizer=tf.keras.regularizers.l2(0.005),
-        ),
+        layers.Dense(1024, activation="relu", kernel_initializer="he_normal"),
+        layers.Dropout(0.3),
         layers.Dense(512, activation="relu", kernel_initializer="he_normal"),
         layers.Dropout(0.3),
         layers.Dense(256, activation="relu", kernel_initializer="he_normal"),
@@ -61,14 +54,12 @@ model_resnet = models.Sequential(
     ]
 )
 
-# Define a learning rate schedule
 lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
-    initial_learning_rate=0.0003,  # Starting learning rate
+    initial_learning_rate=0.0002,  # Starting learning rate
     decay_steps=1000,  # Decay the learning rate after every 1000 steps
-    decay_rate=0.9,  # Decay rate (lr=initial*decay every 1000 steps)
+    decay_rate=0.9,  # Decay rate
 )
 
-# Instantiate the optimizer with the learning rate schedule
 optimizer = tf.keras.optimizers.Adam(learning_rate=lr_schedule)
 
 model_resnet.compile(
@@ -77,15 +68,18 @@ model_resnet.compile(
 
 # Data augmentation
 datagen = ImageDataGenerator(
-    rotation_range=15,
-    width_shift_range=0.15,
-    height_shift_range=0.15,
-    shear_range=0.15,
-    zoom_range=0.15,
+    preprocessing_function=preprocess_input,
+    rotation_range=20,
+    width_shift_range=0.2,
+    height_shift_range=0.2,
+    shear_range=0.2,
+    zoom_range=0.2,
     horizontal_flip=True,
     fill_mode="nearest",
 )
 datagen.fit(x_train)
+
+x_test = preprocess_input(x_test)
 
 # Show agumented images
 augmented_images, augmented_labels = next(datagen.flow(x_train, y_train, batch_size=5))
@@ -94,33 +88,6 @@ for img, label in zip(augmented_images, augmented_labels):
     plt.title(label_names[label])
     plt.show()
 
-
-def combined_data_generator(x, y, batch_size, datagen):
-    data_gen = datagen.flow(
-        x, y, batch_size=batch_size // 2
-    )  # Half batch size for augmented data
-    while True:
-        # Get a batch of augmented data
-        x_augmented, y_augmented = next(data_gen)
-
-        # Get a batch of original data
-        idx = np.random.choice(len(x), batch_size // 2, replace=False)
-        x_original = x[idx]
-        y_original = y[idx]
-
-        # Combine original and augmented data
-        x_combined = np.concatenate([x_original, x_augmented])
-        y_combined = np.concatenate([y_original, y_augmented])
-
-        # Shuffle the combined data
-        indices = np.arange(batch_size)
-        np.random.shuffle(indices)
-        x_combined = x_combined[indices]
-        y_combined = y_combined[indices]
-
-        yield x_combined, y_combined
-
-
 # Callbacks
 early_stop = EarlyStopping(monitor="val_loss", patience=10, restore_best_weights=True)
 checkpoint = ModelCheckpoint(
@@ -128,12 +95,10 @@ checkpoint = ModelCheckpoint(
 )
 
 # Fit the model
-batch_size = 50
-initial_epochs = 40
-combined_gen = combined_data_generator(x_train, y_train, batch_size, datagen)
-history = model_resnet.fit(
-    combined_gen,
-    steps_per_epoch=len(x_train) / batch_size,
+batch_size = 128
+initial_epochs = 30
+history = model_resnet.fit_generator(
+    datagen.flow(x_train, y_train, batch_size=batch_size),
     epochs=initial_epochs,
     validation_data=(x_test, y_test),
     callbacks=[early_stop, checkpoint],
@@ -149,11 +114,11 @@ model_resnet.compile(
 )
 
 # Continue training (fine-tuning)
-fine_tune_epochs = 20
+fine_tune_epochs = 10
 total_epochs = initial_epochs + fine_tune_epochs
 
 history_fine = model_resnet.fit(
-    combined_gen,
+    datagen.flow(x_train, y_train, batch_size=batch_size),
     steps_per_epoch=len(x_train) / batch_size,
     epochs=total_epochs,
     initial_epoch=history.epoch[-1],  # Continue from where we left off
