@@ -7,6 +7,7 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import confusion_matrix
+from tensorflow.keras.applications.resnet50 import preprocess_input
 
 # Get the data
 # !wget -nc http://web.cecs.pdx.edu/~singh/rcyc-web/recycle_data_shuffled.tar.gz
@@ -17,9 +18,9 @@ data = np.load("recycle_data_shuffled.npz")
 x_train, y_train = data["x_train"], data["y_train"]
 x_test, y_test = data["x_test"], data["y_test"]
 
-#  Normalize the Images:
-x_train = x_train.astype("float32") / 255.0
-x_test = x_test.astype("float32") / 255.0
+#  Preprocess the Images:
+x_train = preprocess_input(x_train)
+x_test = preprocess_input(x_test)
 
 # Flatten the Labels
 y_train = y_train.flatten()
@@ -62,7 +63,7 @@ model_resnet = models.Sequential(
 
 # Define a learning rate schedule
 lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
-    initial_learning_rate=0.001,  # Starting learning rate
+    initial_learning_rate=0.0003,  # Starting learning rate
     decay_steps=1000,  # Decay the learning rate after every 1000 steps
     decay_rate=0.9,  # Decay rate (lr=initial*decay every 1000 steps)
 )
