@@ -1,12 +1,12 @@
+from tensorflow.keras import layers, models
+from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.callbacks import ModelCheckpoint
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
 import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import confusion_matrix
-from tensorflow.keras import layers, models
-from tensorflow.keras.callbacks import EarlyStopping
-from tensorflow.keras.callbacks import ModelCheckpoint
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
 # Get the data
 # !wget -nc http://web.cecs.pdx.edu/~singh/rcyc-web/recycle_data_shuffled.tar.gz
@@ -47,20 +47,27 @@ model_resnet = models.Sequential(
     [
         base_model_resnet,
         layers.Flatten(),
-        layers.Dense(1024, activation="relu", kernel_initializer="he_normal"),
+        layers.Dense(
+            1024,
+            activation="relu",
+            kernel_initializer="he_normal",
+            kernel_regularizer=tf.keras.regularizers.l2(0.005),
+        ),
         layers.Dense(512, activation="relu", kernel_initializer="he_normal"),
         layers.Dropout(0.3),
         layers.Dense(256, activation="relu", kernel_initializer="he_normal"),
-        layers.Dense(5, activation="softmax", kernel_initializer="he_normal"),
+        layers.Dense(5, activation="softmax"),
     ]
 )
 
+# Define a learning rate schedule
 lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
     initial_learning_rate=0.001,  # Starting learning rate
     decay_steps=1000,  # Decay the learning rate after every 1000 steps
     decay_rate=0.9,  # Decay rate (lr=initial*decay every 1000 steps)
 )
 
+# Instantiate the optimizer with the learning rate schedule
 optimizer = tf.keras.optimizers.Adam(learning_rate=lr_schedule)
 
 model_resnet.compile(
@@ -69,11 +76,11 @@ model_resnet.compile(
 
 # Data augmentation
 datagen = ImageDataGenerator(
-    rotation_range=20,
-    width_shift_range=0.2,
-    height_shift_range=0.2,
-    shear_range=0.2,
-    zoom_range=0.2,
+    rotation_range=15,
+    width_shift_range=0.15,
+    height_shift_range=0.15,
+    shear_range=0.15,
+    zoom_range=0.15,
     horizontal_flip=True,
     fill_mode="nearest",
 )
@@ -86,6 +93,33 @@ for img, label in zip(augmented_images, augmented_labels):
     plt.title(label_names[label])
     plt.show()
 
+
+def combined_data_generator(x, y, batch_size, datagen):
+    data_gen = datagen.flow(
+        x, y, batch_size=batch_size // 2
+    )  # Half batch size for augmented data
+    while True:
+        # Get a batch of augmented data
+        x_augmented, y_augmented = next(data_gen)
+
+        # Get a batch of original data
+        idx = np.random.choice(len(x), batch_size // 2, replace=False)
+        x_original = x[idx]
+        y_original = y[idx]
+
+        # Combine original and augmented data
+        x_combined = np.concatenate([x_original, x_augmented])
+        y_combined = np.concatenate([y_original, y_augmented])
+
+        # Shuffle the combined data
+        indices = np.arange(batch_size)
+        np.random.shuffle(indices)
+        x_combined = x_combined[indices]
+        y_combined = y_combined[indices]
+
+        yield x_combined, y_combined
+
+
 # Callbacks
 early_stop = EarlyStopping(monitor="val_loss", patience=10, restore_best_weights=True)
 checkpoint = ModelCheckpoint(
@@ -93,15 +127,40 @@ checkpoint = ModelCheckpoint(
 )
 
 # Fit the model
-batch_size = 32
+batch_size = 50
+initial_epochs = 40
+combined_gen = combined_data_generator(x_train, y_train, batch_size, datagen)
 history = model_resnet.fit(
-    datagen.flow(x_train, y_train, batch_size=batch_size),
+    combined_gen,
     steps_per_epoch=len(x_train) / batch_size,
-    epochs=100,
+    epochs=initial_epochs,
     validation_data=(x_test, y_test),
     callbacks=[early_stop, checkpoint],
 )
-model_resnet.save("recycle_model.h5")
+
+# Unfreeze the top 10 layers of the base model
+for layer in base_model_resnet.layers[-10:]:
+    layer.trainable = True
+
+# Recompile the model after unfreezing
+model_resnet.compile(
+    optimizer=optimizer, loss="sparse_categorical_crossentropy", metrics=["accuracy"]
+)
+
+# Continue training (fine-tuning)
+fine_tune_epochs = 20
+total_epochs = initial_epochs + fine_tune_epochs
+
+history_fine = model_resnet.fit(
+    combined_gen,
+    steps_per_epoch=len(x_train) / batch_size,
+    epochs=total_epochs,
+    initial_epoch=history.epoch[-1],  # Continue from where we left off
+    validation_data=(x_test, y_test),
+    callbacks=[early_stop, checkpoint],
+)
+
+model_resnet.save("recycle_model_fine_tuned.h5")
 
 # Evaluate the model
 loss_resnet, accuracy_resnet = model_resnet.evaluate(x_test, y_test)
@@ -127,6 +186,29 @@ plt.title("Model Loss")
 plt.ylabel("Loss")
 plt.xlabel("Epoch")
 plt.legend(["Train", "Test"], loc="upper left")
+
+plt.tight_layout()
+plt.show()
+
+# Plot training & validation accuracy values for fine training
+plt.figure(figsize=(12, 5))
+
+plt.subplot(1, 2, 1)
+plt.plot(history.history_fine["accuracy"])
+plt.plot(history.history_fine["val_accuracy"])
+plt.title("Model Fine Accuracy")
+plt.ylabel("Fine Accuracy")
+plt.xlabel("Fine Epoch")
+plt.legend(["Fine Train", "Fine Test"], loc="upper left")
+
+# Plot training & validation loss values for fine training
+plt.subplot(1, 2, 2)
+plt.plot(history.history_fine["loss"])
+plt.plot(history.history_fine["val_loss"])
+plt.title("Model Fine Loss")
+plt.ylabel("Fine Loss")
+plt.xlabel("Fine Epoch")
+plt.legend(["Fine Train", "Fine Test"], loc="upper left")
 
 plt.tight_layout()
 plt.show()
