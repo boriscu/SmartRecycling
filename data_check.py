@@ -1,7 +1,7 @@
 import numpy as np
 
 # Load the data from the .npz file
-data = np.load("recycle_data_shuffled/recycle_data_shuffled.npz")
+data = np.load("recycle_data_shuffled.npz")
 x_train, y_train = data["x_train"], data["y_train"]
 x_test, y_test = data["x_test"], data["y_test"]
 
