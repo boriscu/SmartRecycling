@@ -11,7 +11,7 @@ label_names = ["Cardboard", "Glass bottle", "Can", "Crushed can", "Plastic bottl
 model_url = "https://tfhub.dev/tensorflow/ssd_mobilenet_v2/2"
 detector = hub.load(model_url)
 
-resnet_model = tf.keras.models.load_model("./models/recycle_model.h5")
+resnet_model = tf.keras.models.load_model("../models/recycle_model.h5")
 
 
 def show_preprocessed_image(preprocessed_image):
@@ -58,17 +58,20 @@ def process_and_visualize(image_path):
     ].numpy()  # Select the box with the highest confidence score
     score = scores[0].numpy()[max_score_idx]
 
-    if score > 0.5:  # Only process if confidence is above 0.5
-        image = load_img(image_path)
-        image_array = img_to_array(image)
-        ymin, xmin, ymax, xmax = box
+    if score < 0.5:
+        print("Warning! Localization confidence is below 0.5")
 
-        cropped_region = image_array[
-            int(ymin * image_array.shape[0]) : int(ymax * image_array.shape[0]),
-            int(xmin * image_array.shape[1]) : int(xmax * image_array.shape[1]),
-        ]
+    image = load_img(image_path)
+    image_array = img_to_array(image)
+    ymin, xmin, ymax, xmax = box
 
-        height, width, _ = cropped_region.shape
+    cropped_region = image_array[
+        int(ymin * image_array.shape[0]) : int(ymax * image_array.shape[0]),
+        int(xmin * image_array.shape[1]) : int(xmax * image_array.shape[1]),
+    ]
+
+    height, width, _ = cropped_region.shape
+    if height != width:
         diff = abs(height - width)
         if height < width:
             padding_top = diff // 2
@@ -80,10 +83,10 @@ def process_and_visualize(image_path):
             padding = ((0, 0), (padding_left, padding_right), (0, 0))
 
         square_region = np.pad(cropped_region, padding, mode="constant")
-
         cropped_region_resized = tf.image.resize(square_region, (128, 128))
-
-    cls, prob = classify_image(cropped_region_resized.numpy())
+        cls, prob = classify_image(cropped_region_resized.numpy())
+    else:
+        cls, prob = classify_image(cropped_region)
 
     # Visualization
     plt.imshow(image)
@@ -106,4 +109,4 @@ def process_and_visualize(image_path):
     plt.show()
 
 
-process_and_visualize("./holdout_images/knjaz_veliki.jpg")
+process_and_visualize("../holdout_images/plasticna_flasa_naopacke.jpg")
