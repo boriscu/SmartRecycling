@@ -38,9 +38,14 @@ def detect_objects(image_path):
 
 def classify_image(image_array):
     preprocessed_image = preprocess_input(image_array)
+
     show_preprocessed_image(preprocessed_image)
+
     classification = resnet_model.predict(np.expand_dims(preprocessed_image, axis=0))
-    return np.argmax(classification)
+    class_idx = np.argmax(classification)
+    class_prob = classification[0][class_idx]
+
+    return class_idx, class_prob
 
 
 def process_and_visualize(image_path):
@@ -77,27 +82,28 @@ def process_and_visualize(image_path):
         square_region = np.pad(cropped_region, padding, mode="constant")
 
         cropped_region_resized = tf.image.resize(square_region, (128, 128))
-        cls = classify_image(cropped_region_resized.numpy())
 
-        # Visualization
-        plt.imshow(image)
-        ax = plt.gca()
-        rect = patches.Rectangle(
-            (xmin * image_array.shape[1], ymin * image_array.shape[0]),
-            (xmax - xmin) * image_array.shape[1],
-            (ymax - ymin) * image_array.shape[0],
-            linewidth=1,
-            edgecolor="r",
-            facecolor="none",
-        )
-        ax.add_patch(rect)
-        plt.text(
-            xmin * image_array.shape[1],
-            ymin * image_array.shape[0],
-            label_names[cls],
-            bbox=dict(facecolor="white", alpha=0.5),
-        )
-        plt.show()
+    cls, prob = classify_image(cropped_region_resized.numpy())
+
+    # Visualization
+    plt.imshow(image)
+    ax = plt.gca()
+    rect = patches.Rectangle(
+        (xmin * image_array.shape[1], ymin * image_array.shape[0]),
+        (xmax - xmin) * image_array.shape[1],
+        (ymax - ymin) * image_array.shape[0],
+        linewidth=1,
+        edgecolor="r",
+        facecolor="none",
+    )
+    ax.add_patch(rect)
+    plt.text(
+        xmin * image_array.shape[1],
+        ymin * image_array.shape[0],
+        f"{label_names[cls]} {(prob*100):.2f}%",
+        bbox=dict(facecolor="white", alpha=0.5),
+    )
+    plt.show()
 
 
 process_and_visualize("./holdout_images/knjaz_veliki.jpg")
