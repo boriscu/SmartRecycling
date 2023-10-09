@@ -23,6 +23,12 @@ x_test, y_test = data["x_test"], data["y_test"]
 y_train = y_train.flatten()
 y_test = y_test.flatten()
 
+y_train[y_train == 3] = 2
+y_test[y_test == 3] = 2
+y_train[y_train > 3] -= 1
+y_test[y_test > 3] -= 1
+
+
 # Show a random image
 random_idx = np.random.randint(0, len(x_train))
 plt.imshow(x_train[random_idx])
@@ -47,7 +53,7 @@ model_resnet = models.Sequential(
         layers.Dense(512, activation="relu", kernel_initializer="he_normal"),
         layers.Dropout(0.3),
         layers.Dense(256, activation="relu", kernel_initializer="he_normal"),
-        layers.Dense(5, activation="softmax"),
+        layers.Dense(4, activation="softmax"),
     ]
 )
 
