@@ -5,7 +5,8 @@ from matplotlib import pyplot as plt
 import tensorflow as tf
 import numpy as np
 
-label_names = ["Cardboard", "Glass bottle", "Can", "Crushed can", "Plastic bottle"]
+label_names = ["Cardboard", "Glass", "Metal", "Plastic"]
+
 
 model = tf.keras.models.load_model("./models/recycle_model.h5")
 

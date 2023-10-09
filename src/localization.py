@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import tensorflow_hub as hub
 
-label_names = ["Cardboard", "Glass bottle", "Can", "Crushed can", "Plastic bottle"]
+label_names = ["Cardboard", "Glass", "Metal", "Plastic"]
 
 model_url = "https://tfhub.dev/tensorflow/ssd_mobilenet_v2/2"
 detector = hub.load(model_url)
@@ -117,7 +117,6 @@ def process_and_visualize(image_path):
         bbox=dict(facecolor="white", alpha=0.5),
     )
     plt.show()
-
 
 def process_visualise_image(image_np):
     boxes, scores = detect_objects_image(image_np)
@@ -234,3 +233,4 @@ def detect_objects_in_video(input_video):
 
 if __name__ == "__main__":
     detect_objects_in_live_video()
+
