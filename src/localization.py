@@ -5,8 +5,8 @@ from tensorflow.keras.applications.resnet50 import preprocess_input
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import tensorflow_hub as hub
+from enums.labels import label_names
 
-label_names = ["Cardboard", "Glass bottle", "Can", "Crushed can", "Plastic bottle"]
 
 model_url = "https://tfhub.dev/tensorflow/ssd_mobilenet_v2/2"
 detector = hub.load(model_url)

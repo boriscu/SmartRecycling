@@ -8,6 +8,7 @@ from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.applications.resnet50 import preprocess_input
+from enums.labels import label_names
 
 # Get the data
 # !wget -nc http://web.cecs.pdx.edu/~singh/rcyc-web/recycle_data_shuffled.tar.gz
@@ -21,9 +22,6 @@ x_test, y_test = data["x_test"], data["y_test"]
 # Flatten the Labels
 y_train = y_train.flatten()
 y_test = y_test.flatten()
-
-# Label names
-label_names = ["Cardboard", "Glass bottle", "Can", "Crushed can", "Plastic bottle"]
 
 # Show a random image
 random_idx = np.random.randint(0, len(x_train))
