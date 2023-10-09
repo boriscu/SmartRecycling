@@ -1,47 +1,46 @@
 # Smart Recycling
 
-This project aims to classify different types of waste materials using a deep learning model built with TensorFlow and Keras.
+Smart Recycling is a project aimed at automating the process of identifying and localizing waste materials using deep learning. The project consists of two main components:
 
-## Overview
+1. **Classification Model**: This model classifies the type of waste material.
+2. **Localization Model**: This model detects and localizes the waste material in an image.
 
-The project uses a ResNet50 architecture pre-trained on ImageNet to classify waste materials into the following categories:
+## Classification Model
+
+The classification model is built using the ResNet50 architecture pre-trained on ImageNet. The model is fine-tuned on a dataset containing images of various waste materials.
+
+### Dataset
+
+The dataset contains images of the following waste materials:
+
 - Cardboard
 - Glass bottle
 - Can
 - Crushed can
 - Plastic bottle
 
+### Training
+
+1. The ResNet50 base model is frozen, and custom dense layers are added on top.
+2. The model is trained with data augmentation to increase its robustness.
+3. After initial training, the last few layers of the ResNet50 base model are unfrozen, and the model is fine-tuned.
+
+### Evaluation
+
+The model's performance is evaluated using accuracy and loss metrics. A confusion matrix is also plotted to visualize the model's performance across different classes.
+
+## Localization Model
+
+The localization model uses the SSD MobileNet V2 architecture to detect and localize waste materials in images.
+
+### Usage
+
+Given an image, the model detects the waste material and draws a bounding box around it. If the detected waste material's bounding box has a square shape, it is directly classified. If not, the bounding box is resized to a square shape, and then the classification model classifies the waste material.
+
 ## Dependencies
 
-- numpy
-- tensorflow
-- matplotlib
-- seaborn
-- sklearn
-
-## Dataset
-
-The dataset used for this project can be downloaded from the following link:
-[recycle_data_shuffled.tar.gz](http://web.cecs.pdx.edu/~singh/rcyc-web/recycle_data_shuffled.tar.gz)
-
-After downloading, extract the dataset to get the training and testing data.
-
-## Model Architecture
-
-The model uses a ResNet50 base model with its layers frozen. On top of the base model, several dense layers are added for classification. The model is first trained without fine-tuning the base model. After the initial training, the last 10 layers of the base model are unfrozen and the model is fine-tuned.
-
-## Data Augmentation
-
-Data augmentation techniques such as rotation, width shift, height shift, shear, zoom, and horizontal flip are applied to the training data to improve the model's generalization.
-
-## Training
-
-The model is trained using the Adam optimizer with a learning rate schedule. Early stopping and model checkpointing are used as callbacks during training.
-
-## Evaluation
-
-After training, the model's performance is evaluated on the test data. The accuracy and loss plots for both the initial training and fine-tuning phases are provided. Additionally, a confusion matrix is plotted to visualize the model's performance across different classes.
-
-## Prediction
-
-The trained model can be used to predict the class of a given waste material image.
+- TensorFlow
+- TensorFlow Hub
+- Matplotlib
+- Seaborn
+- Scikit-learn
