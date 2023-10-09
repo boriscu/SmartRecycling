@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import tensorflow_hub as hub
 
-label_names = ["Cardboard", "Glass bottle", "Can", "Crushed can", "Plastic bottle"]
+label_names = ["Cardboard", "Glass", "Metal", "Plastic"]
 
 model_url = "https://tfhub.dev/tensorflow/ssd_mobilenet_v2/2"
 detector = hub.load(model_url)
@@ -109,4 +109,4 @@ def process_and_visualize(image_path):
     plt.show()
 
 
-process_and_visualize("../holdout_images/plasticna_flasa_naopacke.jpg")
+process_and_visualize("../holdout_images/plasticna_flasa.jpg")
