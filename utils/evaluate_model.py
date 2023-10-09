@@ -4,8 +4,7 @@ from tensorflow.keras.applications.resnet50 import preprocess_input
 from matplotlib import pyplot as plt
 import tensorflow as tf
 import numpy as np
-
-label_names = ["Cardboard", "Glass bottle", "Can", "Crushed can", "Plastic bottle"]
+from enums.labels import label_names
 
 model = tf.keras.models.load_model("./models/recycle_model.h5")
 
