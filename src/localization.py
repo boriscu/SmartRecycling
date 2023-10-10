@@ -122,28 +122,20 @@ def process_and_visualize(image_path):
 
 def process_visualise_image(image_np):
     boxes, scores = detect_objects_image(image_np)
-    max_score_idx = np.argmax(
-        scores[0].numpy()
-    )  # Index of the highest confidence score
-    box = boxes[0][
-        max_score_idx
-    ].numpy()  # Select the box with the highest confidence score
-    score = scores[0].numpy()[max_score_idx]
 
-    if score < 0.5:
-        print("Warning! Localization confidence is below 0.5")
+    for i, box in enumerate(boxes[0].numpy()):
+        score = scores[0].numpy()[i]
+        if score < 0.45:
+            continue
 
-    image = tf.convert_to_tensor(image_np)
-    image_array = img_to_array(image)
-    ymin, xmin, ymax, xmax = box
+        ymin, xmin, ymax, xmax = box
+        cropped_region = image_np[
+            int(ymin * image_np.shape[0]) : int(ymax * image_np.shape[0]),
+            int(xmin * image_np.shape[1]) : int(xmax * image_np.shape[1]),
+        ]
 
-    cropped_region = image_array[
-        int(ymin * image_array.shape[0]) : int(ymax * image_array.shape[0]),
-        int(xmin * image_array.shape[1]) : int(xmax * image_array.shape[1]),
-    ]
+        height, width, _ = cropped_region.shape
 
-    height, width, _ = cropped_region.shape
-    if height != width:
         diff = abs(height - width)
         if height < width:
             padding_top = diff // 2
@@ -157,32 +149,29 @@ def process_visualise_image(image_np):
         square_region = np.pad(cropped_region, padding, mode="constant")
         cropped_region_resized = tf.image.resize(square_region, (128, 128))
         cls, prob = classify_image(cropped_region_resized.numpy())
-    else:
-        cls, prob = classify_image(cropped_region)
 
-    xmin, ymin, xmax, ymax = (
-        xmin * image_array.shape[1],
-        ymin * image_array.shape[0],
-        xmax * image_array.shape[1],
-        ymax * image_array.shape[0],
-    )
+        xmin, ymin, xmax, ymax = (
+            xmin * image_np.shape[1],
+            ymin * image_np.shape[0],
+            xmax * image_np.shape[1],
+            ymax * image_np.shape[0],
+        )
 
-    cv2.rectangle(
-        image_np, (int(xmin), int(ymin)), (int(xmax), int(ymax)), (0, 0, 255), 2
-    )  # Crveni okvir (BGR format)
+        cv2.rectangle(
+            image_np, (int(xmin), int(ymin)), (int(xmax), int(ymax)), (0, 0, 255), 2
+        )
 
-    # Dodajte ime klase
-    class_name = label_names[cls]
-    cv2.putText(
-        image_np,
-        f"{class_name} {prob * 100:.2f}%",
-        (int(xmin), int(ymin) - 10),
-        cv2.FONT_HERSHEY_SIMPLEX,
-        0.5,
-        (255, 255, 255),
-        2,
-        cv2.LINE_AA,
-    )
+        class_name = label_names[cls]
+        cv2.putText(
+            image_np,
+            f"{class_name} {prob * 100:.2f}%",
+            (int(xmin), int(ymin) - 10),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            1,
+            (255, 255, 255),
+            2,
+            cv2.LINE_AA,
+        )
 
     return image_np
 
