@@ -162,3 +162,4 @@ cython_debug/
 recycle_data_shuffled.npz
 models/
 videos/
+unziped_images/
